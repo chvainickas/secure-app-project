@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Task Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Panel</h1>
+        <p>Logged in as: <%= user.username %> (<%= user.role %>) | <a href="/tasks">My Tasks</a> | <a href="/auth/logout">Logout</a></p>
+
+        <!-- VULNERABILITY: Any logged-in user can access this page -->
+        <% if (user.role !== 'admin') { %>
+            <div style="background-color: #fff3cd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                <strong>Warning:</strong> You are not an admin, but you can still access this panel due to missing authorization checks!
+            </div>
+        <% } %>
+
+        <h2>All Users</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+                <tr style="background-color: #f8f9fa;">
+                    <th style="border: 1px solid #ddd; padding: 10px;">ID</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Username</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Email</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Role</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Created</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(u => { %>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= u.id %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= u.username %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= u.email %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= u.role %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;">
+                            <% if (u.id !== user.id) { %>
+                                <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline;">
+                                    <button type="submit" style="background-color: #dc3545; font-size: 12px; padding: 5px 10px;">Delete</button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <h2>All Tasks</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa;">
+                    <th style="border: 1px solid #ddd; padding: 10px;">ID</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">User</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Title</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Description</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Created</th>
+                    <th style="border: 1px solid #ddd; padding: 10px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% tasks.forEach(task => { %>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= task.id %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= task.username %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= task.title %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= task.description %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;"><%= new Date(task.created_at).toLocaleDateString() %></td>
+                        <td style="border: 1px solid #ddd; padding: 10px;">
+                            <form action="/admin/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
+                                <button type="submit" style="background-color: #dc3545; font-size: 12px; padding: 5px 10px;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
