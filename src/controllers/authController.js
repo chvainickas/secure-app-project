@@ -14,8 +14,29 @@ exports.getRegister = (req, res) => {
 };
 
 exports.postRegister = (req, res) => {
-  // Will implement with plain text password storage
-  res.send('Register endpoint - to be implemented');
+  const { username, email, password } = req.body;
+
+  // VULNERABILITY: Storing password in plain text (no hashing)
+  const query = `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')`;
+
+  db.run(query, [username, email, password], function(err) {
+    if (err) {
+      // VULNERABILITY: Exposing detailed error messages
+      return res.render('register', {
+        error: `Registration failed: ${err.message}`
+      });
+    }
+
+    // Auto-login after registration
+    req.session.user = {
+      id: this.lastID,
+      username: username,
+      email: email,
+      role: 'user'
+    };
+
+    res.redirect('/tasks');
+  });
 };
 
 exports.logout = (req, res) => {
