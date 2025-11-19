@@ -26,8 +26,9 @@
             <% } else { %>
                 <% tasks.forEach(task => { %>
                     <div class="task-item">
-                        <h3><%= task.title %></h3>
-                        <p><%= task.description %></p>
+                        <!-- VULNERABILITY: Stored XSS - using <%- %> which doesn't escape HTML -->
+                        <h3><%- task.title %></h3>
+                        <p><%- task.description %></p>
                         <a href="/tasks/<%= task.id %>/edit">Edit</a>
                         <form action="/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
                             <button type="submit">Delete</button>
