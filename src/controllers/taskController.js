@@ -17,8 +17,38 @@ exports.getTasks = (req, res) => {
 };
 
 exports.searchTasks = (req, res) => {
-  // Will implement with XSS vulnerability
-  res.send('Search endpoint - to be implemented');
+  if (!req.session.user) {
+    return res.redirect('/auth/login');
+  }
+
+  const searchQuery = req.query.q;
+
+  if (!searchQuery) {
+    return res.redirect('/tasks');
+  }
+
+  // VULNERABILITY: SQL Injection - using string concatenation
+  const query = `SELECT * FROM tasks WHERE user_id = ${req.session.user.id} AND (title LIKE '%${searchQuery}%' OR description LIKE '%${searchQuery}%')`;
+
+  db.all(query, (err, tasks) => {
+    if (err) {
+      // VULNERABILITY: Exposing detailed error messages
+      return res.render('search-results', {
+        user: req.session.user,
+        searchQuery: searchQuery,
+        tasks: [],
+        error: `Database error: ${err.message}`
+      });
+    }
+
+    // VULNERABILITY: Reflected XSS - passing unsanitized user input to view
+    res.render('search-results', {
+      user: req.session.user,
+      searchQuery: searchQuery,
+      tasks: tasks,
+      error: null
+    });
+  });
 };
 
 exports.getNewTask = (req, res) => {

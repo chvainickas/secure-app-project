@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Task Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Search Results</h1>
+        <p>Welcome, <%= user.username %>! <a href="/auth/logout">Logout</a></p>
+
+        <!-- VULNERABILITY: Reflected XSS - using <%- %> which doesn't escape HTML -->
+        <p>Search results for: <strong><%- searchQuery %></strong></p>
+
+        <% if (error) { %>
+            <div class="error"><%- error %></div>
+        <% } %>
+
+        <div class="search-box">
+            <form action="/tasks/search" method="GET">
+                <input type="text" name="q" placeholder="Search tasks..." value="<%= searchQuery %>">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <a href="/tasks" class="btn-secondary">Back to All Tasks</a>
+
+        <div class="tasks-list">
+            <% if (tasks.length === 0) { %>
+                <p>No tasks found matching your search.</p>
+            <% } else { %>
+                <% tasks.forEach(task => { %>
+                    <div class="task-item">
+                        <h3><%= task.title %></h3>
+                        <p><%= task.description %></p>
+                        <a href="/tasks/<%= task.id %>/edit">Edit</a>
+                        <form action="/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>
