@@ -5,8 +5,35 @@ exports.getLogin = (req, res) => {
 };
 
 exports.postLogin = (req, res) => {
-  // Will implement with SQL injection vulnerability
-  res.send('Login endpoint - to be implemented');
+  const { email, password } = req.body;
+
+  // VULNERABILITY: SQL Injection - using string concatenation instead of parameterized queries
+  const query = `SELECT * FROM users WHERE email='${email}' AND password='${password}'`;
+
+  db.get(query, (err, user) => {
+    if (err) {
+      // VULNERABILITY: Exposing detailed database errors
+      return res.render('login', {
+        error: `Database error: ${err.message}`
+      });
+    }
+
+    if (!user) {
+      return res.render('login', {
+        error: 'Invalid email or password'
+      });
+    }
+
+    // Create session
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    };
+
+    res.redirect('/tasks');
+  });
 };
 
 exports.getRegister = (req, res) => {
