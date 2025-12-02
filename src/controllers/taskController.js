@@ -9,10 +9,10 @@ exports.getTasks = (req, res) => {
 
   db.all(query, [req.session.user.id], (err, tasks) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send('Error fetching tasks');
+      console.error('Error fetching tasks:', err.message);
+      return res.status(500).send('An error occurred');
     }
-    res.render('tasks', { user: req.session.user, tasks: tasks });
+    res.render('tasks', { user: req.session.user, tasks: tasks, csrfToken: req.csrfToken() });
   });
 };
 
@@ -27,26 +27,29 @@ exports.searchTasks = (req, res) => {
     return res.redirect('/tasks');
   }
 
-  // VULNERABILITY: SQL Injection - using string concatenation
-  const query = `SELECT * FROM tasks WHERE user_id = ${req.session.user.id} AND (title LIKE '%${searchQuery}%' OR description LIKE '%${searchQuery}%')`;
+  // SECURE: Using parameterized query to prevent SQL injection
+  const query = 'SELECT * FROM tasks WHERE user_id = ? AND (title LIKE ? OR description LIKE ?)';
+  const searchPattern = `%${searchQuery}%`;
 
-  db.all(query, (err, tasks) => {
+  db.all(query, [req.session.user.id, searchPattern, searchPattern], (err, tasks) => {
     if (err) {
-      // VULNERABILITY: Exposing detailed error messages
+      // SECURE: Generic error message
+      console.error('Search error:', err.message);
       return res.render('search-results', {
         user: req.session.user,
         searchQuery: searchQuery,
         tasks: [],
-        error: `Database error: ${err.message}`
+        error: 'An error occurred while searching',
+        csrfToken: req.csrfToken()
       });
     }
 
-    // VULNERABILITY: Reflected XSS - passing unsanitized user input to view
     res.render('search-results', {
       user: req.session.user,
       searchQuery: searchQuery,
       tasks: tasks,
-      error: null
+      error: null,
+      csrfToken: req.csrfToken()
     });
   });
 };
@@ -55,7 +58,7 @@ exports.getNewTask = (req, res) => {
   if (!req.session.user) {
     return res.redirect('/auth/login');
   }
-  res.render('new-task', { user: req.session.user });
+  res.render('new-task', { user: req.session.user, csrfToken: req.csrfToken() });
 };
 
 exports.postNewTask = (req, res) => {
@@ -68,8 +71,8 @@ exports.postNewTask = (req, res) => {
 
   db.run(query, [req.session.user.id, title, description], (err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send('Error creating task');
+      console.error('Error creating task:', err.message);
+      return res.status(500).send('An error occurred');
     }
     res.redirect('/tasks');
   });
@@ -85,13 +88,13 @@ exports.getEditTask = (req, res) => {
 
   db.get(query, [taskId, req.session.user.id], (err, task) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send('Error fetching task');
+      console.error('Error fetching task:', err.message);
+      return res.status(500).send('An error occurred');
     }
     if (!task) {
       return res.status(404).send('Task not found');
     }
-    res.render('edit-task', { user: req.session.user, task: task });
+    res.render('edit-task', { user: req.session.user, task: task, csrfToken: req.csrfToken() });
   });
 };
 
@@ -106,8 +109,8 @@ exports.postEditTask = (req, res) => {
 
   db.run(query, [title, description, taskId, req.session.user.id], (err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send('Error updating task');
+      console.error('Error updating task:', err.message);
+      return res.status(500).send('An error occurred');
     }
     res.redirect('/tasks');
   });
@@ -123,8 +126,8 @@ exports.deleteTask = (req, res) => {
 
   db.run(query, [taskId, req.session.user.id], (err) => {
     if (err) {
-      console.error(err);
-      return res.status(500).send('Error deleting task');
+      console.error('Error deleting task:', err.message);
+      return res.status(500).send('An error occurred');
     }
     res.redirect('/tasks');
   });
