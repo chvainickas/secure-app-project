@@ -11,12 +11,7 @@
         <h1>Admin Panel</h1>
         <p>Logged in as: <%= user.username %> (<%= user.role %>) | <a href="/tasks">My Tasks</a> | <a href="/auth/logout">Logout</a></p>
 
-        <!-- VULNERABILITY: Any logged-in user can access this page -->
-        <% if (user.role !== 'admin') { %>
-            <div style="background-color: #fff3cd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-                <strong>Warning:</strong> You are not an admin, but you can still access this panel due to missing authorization checks!
-            </div>
-        <% } %>
+        <!-- SECURE: Only admins can access this page due to requireAdmin middleware -->
 
         <h2>All Users</h2>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
@@ -41,6 +36,8 @@
                         <td style="border: 1px solid #ddd; padding: 10px;">
                             <% if (u.id !== user.id) { %>
                                 <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline;">
+                                    <!-- SECURE: CSRF token -->
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <button type="submit" style="background-color: #dc3545; font-size: 12px; padding: 5px 10px;">Delete</button>
                                 </form>
                             <% } %>
@@ -72,6 +69,8 @@
                         <td style="border: 1px solid #ddd; padding: 10px;"><%= new Date(task.created_at).toLocaleDateString() %></td>
                         <td style="border: 1px solid #ddd; padding: 10px;">
                             <form action="/admin/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
+                                <!-- SECURE: CSRF token -->
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <button type="submit" style="background-color: #dc3545; font-size: 12px; padding: 5px 10px;">Delete</button>
                             </form>
                         </td>
