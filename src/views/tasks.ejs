@@ -5,20 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Tasks - Task Manager</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/app.js"></script>
+    <!-- SECURE: Removed vulnerable app.js that used innerHTML and eval() -->
 </head>
 <body>
     <div class="container">
-        <!-- DOM-based XSS target divs -->
-        <div id="notification-message" style="display:none; background-color: #d4edda; padding: 10px; margin-bottom: 15px; border-radius: 4px;"></div>
-        <div id="welcome-message"></div>
-
         <h1>My Tasks</h1>
-        <p>Welcome, <%= user.username %>! | <a href="/admin">Admin Panel</a> | <a href="/auth/logout">Logout</a></p>
+        <p>Welcome, <%= user.username %>!
+            <% if (user.role === 'admin') { %>
+                | <a href="/admin">Admin Panel</a>
+            <% } %>
+            | <a href="/auth/logout">Logout</a>
+        </p>
 
         <div class="search-box">
             <form action="/tasks/search" method="GET">
                 <input type="text" name="q" placeholder="Search tasks...">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit">Search</button>
             </form>
         </div>
@@ -31,11 +33,12 @@
             <% } else { %>
                 <% tasks.forEach(task => { %>
                     <div class="task-item">
-                        <!-- VULNERABILITY: Stored XSS - using <%- %> which doesn't escape HTML -->
-                        <h3><%- task.title %></h3>
-                        <p><%- task.description %></p>
+                        <!-- SECURE: Using <%= %> which auto-escapes HTML to prevent XSS -->
+                        <h3><%= task.title %></h3>
+                        <p><%= task.description %></p>
                         <a href="/tasks/<%= task.id %>/edit">Edit</a>
                         <form action="/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <button type="submit">Delete</button>
                         </form>
                     </div>

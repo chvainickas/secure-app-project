@@ -11,16 +11,17 @@
         <h1>Search Results</h1>
         <p>Welcome, <%= user.username %>! <a href="/auth/logout">Logout</a></p>
 
-        <!-- VULNERABILITY: Reflected XSS - using <%- %> which doesn't escape HTML -->
-        <p>Search results for: <strong><%- searchQuery %></strong></p>
+        <!-- SECURE: Using <%= %> which auto-escapes HTML to prevent reflected XSS -->
+        <p>Search results for: <strong><%= searchQuery %></strong></p>
 
         <% if (error) { %>
-            <div class="error"><%- error %></div>
+            <div class="error"><%= error %></div>
         <% } %>
 
         <div class="search-box">
             <form action="/tasks/search" method="GET">
                 <input type="text" name="q" placeholder="Search tasks..." value="<%= searchQuery %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit">Search</button>
             </form>
         </div>
@@ -33,11 +34,12 @@
             <% } else { %>
                 <% tasks.forEach(task => { %>
                     <div class="task-item">
-                        <!-- VULNERABILITY: Stored XSS - using <%- %> which doesn't escape HTML -->
-                        <h3><%- task.title %></h3>
-                        <p><%- task.description %></p>
+                        <!-- SECURE: Using <%= %> which auto-escapes HTML to prevent stored XSS -->
+                        <h3><%= task.title %></h3>
+                        <p><%= task.description %></p>
                         <a href="/tasks/<%= task.id %>/edit">Edit</a>
                         <form action="/tasks/<%= task.id %>/delete" method="POST" style="display:inline;">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <button type="submit">Delete</button>
                         </form>
                     </div>
