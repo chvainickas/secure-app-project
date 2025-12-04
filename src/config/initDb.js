@@ -1,7 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
 const path = require('path');
 
 const dbPath = path.join(__dirname, '../../database.sqlite3');
+const SALT_ROUNDS = 12;
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -12,8 +14,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // Create tables
-db.serialize(() => {
-  // Users table - storing passwords in plain text (INSECURE)
+db.serialize(async () => {
+  // Users table - SECURE: passwords will be stored as bcrypt hashes
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,7 +71,7 @@ db.serialize(() => {
     }
   });
 
-  // Logs table
+  // Logs table for security event logging
   db.run(`
     CREATE TABLE IF NOT EXISTS logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,20 +92,29 @@ db.serialize(() => {
     }
   });
 
-  // Create a default admin user (plain text password - INSECURE)
-  db.run(`
-    INSERT OR IGNORE INTO users (username, email, password, role)
-    VALUES ('admin', 'admin@example.com', 'admin123', 'admin')
-  `, (err) => {
-    if (err) {
-      console.error('Error creating admin user:', err.message);
-    } else {
-      console.log('Default admin user created (username: admin, password: admin123)');
-    }
-  });
+  // SECURE: Create admin user with bcrypt hashed password
+  try {
+    const adminPassword = 'admin123';
+    const hashedPassword = await bcrypt.hash(adminPassword, SALT_ROUNDS);
 
-  console.log('\nDatabase initialization complete!');
-  console.log('Run "npm start" to start the application\n');
+    db.run(`
+      INSERT OR IGNORE INTO users (username, email, password, role)
+      VALUES (?, ?, ?, ?)
+    `, ['admin', 'admin@example.com', hashedPassword, 'admin'], (err) => {
+      if (err) {
+        console.error('Error creating admin user:', err.message);
+      } else {
+        console.log('Default admin user created (username: admin, password: admin123)');
+        console.log('Note: Password is securely hashed with bcrypt');
+      }
+
+      console.log('\nDatabase initialization complete!');
+      console.log('Run "npm start" to start the application\n');
+
+      db.close();
+    });
+  } catch (hashErr) {
+    console.error('Error hashing password:', hashErr.message);
+    db.close();
+  }
 });
-
-db.close();
